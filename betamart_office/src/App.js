@@ -1,6 +1,5 @@
 // App.js
-import React, { useState } from "react";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import Home from "./Home";
 import Navigation from "./Navigation";
@@ -10,19 +9,23 @@ import Login from "./Component/Login";
 import './App.css';
 
 function App() {
-  const [users, setUsers] = useState([
-    { id: 1, name: 'User1', email: 'user1@example.com', password: 'password1' },
-    { id: 2, name: 'User2', email: 'user2@example.com', password: 'password2' },
-    { id: 3, name: 'User3', email: 'user3@example.com', password: 'password3' },
-  ]);
-
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Product 1', price: 100, description: 'Description for Product 1' },
-    { id: 2, name: 'Product 2', price: 200, description: 'Description for Product 2' },
-    { id: 3, name: 'Product 3', price: 300, description: 'Description for Product 3' },
-  ]);
-
+  const [users, setUsers] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loggedInUser, setLoggedInUser] = useState(null);
+
+  useEffect(() => {
+    // Fetch users from the API
+    fetch("http://127.0.0.1:8000/api/users")
+      .then(response => response.json())
+      .then(data => setUsers(data))
+      .catch(error => console.error("Error fetching users:", error));
+
+    // Fetch products from the API
+    fetch("http://127.0.0.1:8000/api/products")
+      .then(response => response.json())
+      .then(data => setProducts(data))
+      .catch(error => console.error("Error fetching products:", error));
+  }, []); // Empty dependency array to run the effect only once
 
   // Function to handle login
   const handleLogin = (userData) => {

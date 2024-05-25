@@ -2,24 +2,34 @@ import React, { useState } from "react";
 import { Container, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
-const Login = ({ users, onLogin }) => {
+const Login = ({ onLogin }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const user = users.find((user) => user.name === username && user.password === password);
-    if (user) {
-      const userData = {
-        id: user.id,
-        username: user.name.charAt(0).toUpperCase() + user.name.slice(1),
-      };
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid username or password");
+      }
+
+      const userData = await response.json();
+      console.log(userData);
       onLogin(userData);
-      navigate("/"); // Navigate to the home page
-    } else {
-      setError("Invalid username or password");
+      navigate("/");
+    } catch (error) {
+      setError(error.message);
     }
   };
 

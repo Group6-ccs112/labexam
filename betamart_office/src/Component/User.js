@@ -16,37 +16,101 @@ const User = ({ users, setUsers, loggedInUser, setLoggedInUser }) => {
     }
   };
 
-  const addUser = () => {
-    setUsers([...users, { id: users.length + 1, ...newUser }]);
-    setNewUser({ name: '', email: '', password: '' });
-  };
+  const addUser = async () => {
+    try {
+      // Check if username is already taken
+      const existingUsername = users.find(user => user.name === newUser.name);
+      if (existingUsername) {
+        throw new Error('Username is already taken');
+      }
+  
+      // Check if email is already taken
+      const existingEmail = users.find(user => user.email === newUser.email);
+      if (existingEmail) {
+        throw new Error('Email is already taken');
+      }
+  
+      const response = await fetch('http://127.0.0.1:8000/api/addUser', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newUser),
+      });
+  
+      const data = await response.json();
+      setUsers(prevUsers => [...prevUsers, newUser]);
+      console.log(data);
+      setNewUser({ name: '', email: '', password: '' });
+    } catch (error) {
+      console.error('Error adding user:', error.message);
+    }
+  };  
+   
 
   const editUser = (user) => {
     setEditing(true);
     setCurrentUser(user);
   };
 
-// Function to handle logout
-const handleLogout = () => {
-    setLoggedInUser(null);
-    };
-
   const updateUser = () => {
-    setUsers(users.map(user => (user.id === currentUser.id ? currentUser : user)));
-    if (loggedInUser.id === currentUser.id) {
-        const userData = {
+    try {
+      const updatedUser = { ...currentUser };
+  
+      // Check if username is already taken
+      const existingUsername = users.find(user => user.id !== updatedUser.id && user.name === updatedUser.name);
+      if (existingUsername) {
+        throw new Error('Username is already taken');
+      }
+  
+      // Check if email is already taken
+      const existingEmail = users.find(user => user.id !== updatedUser.id && user.email === updatedUser.email);
+      if (existingEmail) {
+        throw new Error('Email is already taken');
+      }
+  
+      // Remove password if it's empty
+      if (updatedUser.password === '') {
+        delete updatedUser.password;
+      }
+  
+      fetch(`http://127.0.0.1:8000/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedUser),
+      })
+      .then(response => response.json())
+      .then(data => {
+        setUsers(users.map(user => (user.id === currentUser.id ? currentUser : user)));
+        if (loggedInUser.id === currentUser.id) {
+          const userData = {
             id: currentUser.id,
-            username: currentUser.name.charAt(0).toUpperCase() + currentUser.name.slice(1),
-        };
-        setLoggedInUser(userData); // Update the loggedInUser state if it's the same user being edited
+            name: currentUser.name.charAt(0).toUpperCase() + currentUser.name.slice(1),
+            email: currentUser.email,
+          };
+          setLoggedInUser(userData);
+          console.log(data);
+        }
+        setEditing(false);
+        setCurrentUser({ id: null, name: '', email: '', password: '' });
+      })
+      .catch(error => console.error('Error updating user:', error.message));
+    } catch (error) {
+      console.error('Error updating user:', error.message);
     }
-    console.log(loggedInUser);
-    setEditing(false);
-    setCurrentUser({ id: null, name: '', email: '', password: '' });
   };
+  
 
   const deleteUser = (id) => {
-    setUsers(users.filter(user => user.id !== id));
+    fetch(`http://127.0.0.1:8000/api/removeUser/${id}`, {
+      method: 'DELETE',
+    })
+    .then(() => {
+      setUsers(users.filter(user => user.id !== id));
+    })
+    .catch(error => console.error('Error deleting user:', error));
   };
 
   return (
@@ -107,7 +171,6 @@ const handleLogout = () => {
                 <tr>
                   <th>Name</th>
                   <th>Email</th>
-                  <th>Password</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -116,7 +179,6 @@ const handleLogout = () => {
                   <tr key={user.id}>
                     <td>{user.name}</td>
                     <td>{user.email}</td>
-                    <td>{user.password}</td>
                     <td>
                       <button
                         className="btn btn-primary btn-sm mr-2 me-2"

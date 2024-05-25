@@ -15,10 +15,24 @@ const Product = ({ products, setProducts }) => {
     }
   };
 
-  const addProduct = () => {
-    setProducts([...products, { id: products.length + 1, ...newProduct }]);
-    setNewProduct({ name: '', price: '', description: '' });
-  };
+  const addProduct = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/addProduct', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newProduct),
+      });
+  
+      const data = await response.json();
+      setProducts(prevProducts => [...prevProducts, newProduct]);
+      console.log(data);
+      setNewProduct({ name: '', price: '', description: '' });
+    } catch (error) {
+      console.error('Error adding product:', error);
+    }
+  };  
 
   const editProduct = (product) => {
     setEditing(true);
@@ -26,13 +40,30 @@ const Product = ({ products, setProducts }) => {
   };
 
   const updateProduct = () => {
-    setProducts(products.map(product => (product.id === currentProduct.id ? currentProduct : product)));
-    setEditing(false);
-    setCurrentProduct({ id: null, name: '', price: '', description: '' });
+    fetch(`http://127.0.0.1:8000/api/products/${currentProduct.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(currentProduct),
+    })
+    .then(response => response.json())
+    .then(data => {
+      setProducts(products.map(product => (product.id === currentProduct.id ? currentProduct : product)));
+      setEditing(false);
+      setCurrentProduct({ id: null, name: '', price: '', description: '' });
+    })
+    .catch(error => console.error('Error updating product:', error));
   };
 
   const deleteProduct = (id) => {
-    setProducts(products.filter(product => product.id !== id));
+    fetch(`http://127.0.0.1:8000/api/removeProduct/${id}`, {
+      method: 'DELETE',
+    })
+    .then(() => {
+      setProducts(products.filter(product => product.id !== id));
+    })
+    .catch(error => console.error('Error deleting product:', error));
   };
 
   return (
