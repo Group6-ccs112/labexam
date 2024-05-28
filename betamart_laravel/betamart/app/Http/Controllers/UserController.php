@@ -24,8 +24,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'username' => $request->username,
             'password' => Hash::make($request->password),
         ]);
 
@@ -35,9 +34,17 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        $user->name = $request->input('name');
-        $user->email = $request->input('email');
-        $user->password = Hash::make($request->password);
+
+        // Verify current password
+        if (!$user || !Hash::check($request->current_password, $user->password)) {
+            return response()->json(['error' => 'Incorrect current password'], 403);
+        }
+
+        // Update user information
+        $user->username = $request->input('username');
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
         $user->save();
 
         return response()->json(['message' => 'User updated successfully', 'user' => $user]);
@@ -52,7 +59,7 @@ class UserController extends Controller
 
     public function login(Request $request)
     {
-        $user = User::where('name', $request->username)->first();
+        $user = User::where('username', $request->username)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);

@@ -3,31 +3,19 @@ import Navigation from "../Navigation.js";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const User = ({ users, setUsers, loggedInUser, setLoggedInUser }) => {
-  const [newUser, setNewUser] = useState({ name: '', email: '', password: '' });
   const [editing, setEditing] = useState(false);
-  const [currentUser, setCurrentUser] = useState({ id: null, name: '', email: '', password: '' });
+  const [currentUser, setCurrentUser] = useState({ id: null, username: '', password: '' });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (editing) {
-      setCurrentUser({ ...currentUser, [name]: value });
-    } else {
-      setNewUser({ ...newUser, [name]: value });
-    }
+    setCurrentUser({ ...currentUser, [name]: value });
   };
 
   const addUser = async () => {
     try {
-      // Check if username is already taken
-      const existingUsername = users.find(user => user.name === newUser.name);
+      const existingUsername = users.find(user => user.username === currentUser.username);
       if (existingUsername) {
         throw new Error('Username is already taken');
-      }
-  
-      // Check if email is already taken
-      const existingEmail = users.find(user => user.email === newUser.email);
-      if (existingEmail) {
-        throw new Error('Email is already taken');
       }
   
       const response = await fetch('http://127.0.0.1:8000/api/addUser', {
@@ -35,74 +23,78 @@ const User = ({ users, setUsers, loggedInUser, setLoggedInUser }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newUser),
+        body: JSON.stringify(currentUser),
       });
   
       const data = await response.json();
-      setUsers(prevUsers => [...prevUsers, newUser]);
+      setUsers(prevUsers => [...prevUsers, currentUser]);
       console.log(data);
-      setNewUser({ name: '', email: '', password: '' });
+      clearInputs();
     } catch (error) {
       console.error('Error adding user:', error.message);
     }
   };  
-   
 
   const editUser = (user) => {
     setEditing(true);
     setCurrentUser(user);
   };
 
-  const updateUser = () => {
+  const updateUser = async () => {
     try {
-      const updatedUser = { ...currentUser };
+      const currentPassword = window.prompt("Please enter your current password to confirm changes:");
+    
+      if (!currentPassword) {
+        console.log("User cancelled password verification.");
+        return;
+      }
   
-      // Check if username is already taken
-      const existingUsername = users.find(user => user.id !== updatedUser.id && user.name === updatedUser.name);
+      const updatedUser = { ...currentUser };
+      updatedUser.current_password = currentPassword; // Add current_password property
+  
+      const existingUsername = users.find(user => user.id !== updatedUser.id && user.username === updatedUser.username);
       if (existingUsername) {
         throw new Error('Username is already taken');
       }
   
-      // Check if email is already taken
-      const existingEmail = users.find(user => user.id !== updatedUser.id && user.email === updatedUser.email);
-      if (existingEmail) {
-        throw new Error('Email is already taken');
-      }
-  
-      // Remove password if it's empty
       if (updatedUser.password === '') {
         delete updatedUser.password;
       }
   
-      fetch(`http://127.0.0.1:8000/api/users/${currentUser.id}`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/users/${currentUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(updatedUser),
-      })
-      .then(response => response.json())
-      .then(data => {
+      });
+  
+      const data = await response.json();
+      if (response.ok) {
+        // Update successful
+        alert("User updated successfully");
         setUsers(users.map(user => (user.id === currentUser.id ? currentUser : user)));
         if (loggedInUser.id === currentUser.id) {
           const userData = {
             id: currentUser.id,
-            name: currentUser.name.charAt(0).toUpperCase() + currentUser.name.slice(1),
-            email: currentUser.email,
+            username: currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1),
           };
           setLoggedInUser(userData);
-          console.log(data);
         }
         setEditing(false);
-        setCurrentUser({ id: null, name: '', email: '', password: '' });
-      })
-      .catch(error => console.error('Error updating user:', error.message));
+        clearInputs();
+        console.log(data);
+      } else {
+        // Error occurred
+        throw new Error('Failed to update user');
+      }
     } catch (error) {
       console.error('Error updating user:', error.message);
+      alert("Failed to update user. Please try again.");
     }
   };
   
-
+  
   const deleteUser = (id) => {
     fetch(`http://127.0.0.1:8000/api/removeUser/${id}`, {
       method: 'DELETE',
@@ -111,6 +103,17 @@ const User = ({ users, setUsers, loggedInUser, setLoggedInUser }) => {
       setUsers(users.filter(user => user.id !== id));
     })
     .catch(error => console.error('Error deleting user:', error));
+  };
+
+  const clearInputs = () => {
+    setCurrentUser({ id: null, username: '', password: '' });
+    const inputTags = document.querySelectorAll('input[type="text"], input[type="password"]');
+    inputTags.forEach(input => input.value = '');
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    clearInputs();
   };
 
   return (
@@ -129,35 +132,28 @@ const User = ({ users, setUsers, loggedInUser, setLoggedInUser }) => {
               <input
                 type="text"
                 className="form-control"
-                name="name"
-                value={editing ? currentUser.name : newUser.name}
+                name="username"
+                value={currentUser.username}
                 onChange={handleInputChange}
-                placeholder="Name"
+                placeholder="Username"
               />
             </div>
+            <br></br>
+            {!editing && (
+              <div className="form-group">
+                <input
+                  type="password"
+                  className="form-control"
+                  name="password"
+                  onChange={handleInputChange}
+                  placeholder="Password"
+                />
+              </div>
+            )}
             <br />
-            <div className="form-group">
-              <input
-                type="email"
-                className="form-control"
-                name="email"
-                value={editing ? currentUser.email : newUser.email}
-                onChange={handleInputChange}
-                placeholder="Email"
-              />
-            </div>
-            <br />
-            <div className="form-group">
-              <input
-                type="password"
-                className="form-control"
-                name="password"
-                value={editing ? currentUser.password : newUser.password}
-                onChange={handleInputChange}
-                placeholder="Password"
-              />
-            </div>
-            <br />
+            <button className="btn btn-secondary w-100 mb-2" onClick={() => handleCancel()}>
+              Cancel
+            </button>
             <button className="btn btn-success w-100" type="submit">
               {editing ? 'Update' : 'Add'}
             </button>
@@ -169,16 +165,14 @@ const User = ({ users, setUsers, loggedInUser, setLoggedInUser }) => {
             <table className="table table-bordered">
               <thead className="thead-dark">
                 <tr>
-                  <th>Name</th>
-                  <th>Email</th>
+                  <th>Username</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(user => (
                   <tr key={user.id}>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
+                    <td>{user.username}</td>
                     <td>
                       <button
                         className="btn btn-primary btn-sm mr-2 me-2"

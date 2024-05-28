@@ -28,7 +28,7 @@ const Product = ({ products, setProducts }) => {
       const data = await response.json();
       setProducts(prevProducts => [...prevProducts, newProduct]);
       console.log(data);
-      setNewProduct({ name: '', price: '', description: '' });
+      clearInputs();
     } catch (error) {
       console.error('Error adding product:', error);
     }
@@ -51,7 +51,7 @@ const Product = ({ products, setProducts }) => {
     .then(data => {
       setProducts(products.map(product => (product.id === currentProduct.id ? currentProduct : product)));
       setEditing(false);
-      setCurrentProduct({ id: null, name: '', price: '', description: '' });
+      clearInputs();
     })
     .catch(error => console.error('Error updating product:', error));
   };
@@ -64,6 +64,20 @@ const Product = ({ products, setProducts }) => {
       setProducts(products.filter(product => product.id !== id));
     })
     .catch(error => console.error('Error deleting product:', error));
+  };
+
+  const clearInputs = () => {
+    setNewProduct({ name: '', price: '', description: '' });
+    if (editing) {
+      setNewProduct({ id: null, name: '', price: '', description: '' });
+    }
+    const inputTags = document.querySelectorAll('input[type="text"], input[type="number"]');
+    inputTags.forEach(input => input.value = '');
+  };  
+  
+  const handleCancel = () => {
+    setEditing(false);
+    clearInputs();
   };
 
   return (
@@ -111,6 +125,10 @@ const Product = ({ products, setProducts }) => {
               />
             </div>
             <br />
+            <button type="button" className="btn btn-secondary w-100 mb-2" onClick={() => handleCancel()}>
+              Cancel
+            </button>
+            <br />
             <button className="btn btn-success w-100" type="submit">
               {editing ? 'Update' : 'Add'}
             </button>
@@ -131,9 +149,9 @@ const Product = ({ products, setProducts }) => {
               <tbody>
                 {products.map(product => (
                   <tr key={product.id}>
-                    <td>{product.name}</td>
+                    <td style={{ maxWidth: '50px' }}>{product.name}</td>
                     <td>{product.price}</td>
-                    <td>{product.description}</td>
+                    <td style={{ maxWidth: '120px' }}>{product.description}</td>
                     <td>
                       <button
                         className="btn btn-primary btn-sm mr-2 me-2"

@@ -18,17 +18,16 @@ class UserSeeder extends Seeder
     {
         // Sample users with names, emails, and passwords
         $users = [
-            ['name' => 'john123', 'email' => 'john@example.com', 'password' => 'password123'],
-            ['name' => 'jane123', 'email' => 'jane@example.com', 'password' => 'password456'],
-            ['name' => 'alice123', 'email' => 'alice@example.com', 'password' => 'password789'],
-            ['name' => 'bob123', 'email' => 'bob@example.com', 'password' => 'passwordabc'],
+            ['username' => 'admin', 'password' => '1234'],
+            ['username' => 'jane123', 'password' => 'password456'],
+            ['username' => 'alice123', 'password' => 'password789'],
+            ['username' => 'bob123', 'password' => 'passwordabc'],
         ];
 
         // Create each user
         foreach ($users as $user) {
             User::create([
-                'name' => $user['name'],
-                'email' => $user['email'],
+                'username' => $user['username'],
                 'password' => Hash::make($user['password']),
             ]);
         }

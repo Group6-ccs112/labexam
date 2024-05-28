@@ -12,7 +12,7 @@ function Navigation({ user, onLogout }) {
           <nav className="d-flex justify-content-between align-items-center me-5 text-decoration-none">
             <ul className="list-unstyled text-decoration-none d-flex fs-2 fw-bold">
               <>
-                <li className="me-3">Welcome, {user.user.name}</li>
+                <li className="me-3">Welcome, {user.user.username}</li>
                 <li><Logout onLogout={onLogout} /></li>
               </>
             </ul>
